@@ -19,9 +19,9 @@ The team's lineup being simulated. If using players from multiple teams, set `te
 
 ### `N`
 
-n = 10000
+n = 15000
 
-Number of simulations to run for each lineup. 10,000 is recomended.
+Number of simulations to run for each lineup. 15,000 is recomended.
 
 
 ### `lineups `
