@@ -99,9 +99,10 @@ class GameSimulator:
             return sum(self.runs)
 
 def main():
-    # Add batting stats
+    # Only edit these 4 variables
     split = 'rhp'
     team = 'UCSB'
+    n = 15000
     lineups = [['N. Oakley', 'Z. Darby', 'A. Parker', 'J. Trimble', 'R. Calvin', 'L. Mccollum', 'J. Brown', 'B. Durfee', 'J. Mendez']]
 
     # Load the data
@@ -109,32 +110,35 @@ def main():
     lg_dist = joblib.load('college_lg_avg.pkl')
     stat_col = joblib.load('college_stat_cols.pkl')
     bat_stats = pd.read_csv(f'{split}_stats.csv')
-    team_lineups = [[f'{player} ({team})' for player in lineup] for lineup in lineups]
-    bat_stats['abbrevTeam'] = bat_stats['abbrevName'].astype(str) + ' (' + bat_stats['newestTeamAbbrevName'] + ')'
-    bat_stats = bat_stats[bat_stats['abbrevTeam'].isin([player for lineup in team_lineups for player in lineup])]
+    if team != '':
+        team_lineups = [[f'{player} ({team})' for player in lineup] for lineup in lineups]
+    else:
+        team_lineups = lineups
+
+    bat_stats['NameTeam'] = bat_stats['Name'].astype(str) + ' (' + bat_stats['Team'] + ')'
+    bat_stats = bat_stats[bat_stats['NameTeam'].isin([player for lineup in team_lineups for player in lineup])]
 
     tm_stats = {'BB': 'Walk', '1B': 'Single', '2B': 'Double', '3B': 'Triple', 'HR': 'Home Run',
                 'ROE': 'Reached on Error', 'K': 'Strikeout', 'HBP': 'Hit By Pitch', 'FO': 'Fly Out', 'GO': 'Ground Out',
-                'LO': 'Line Out', 'Popup#': 'Pop Out'}
+                'LO': 'Line Out', 'PO': 'Pop Out'}
 
 
-    bat_stats = dict(bat_stats[['abbrevTeam'] + list(tm_stats.keys())].rename(columns=tm_stats).set_index('abbrevTeam').T)
+    bat_stats = dict(bat_stats[['NameTeam'] + list(tm_stats.keys())].rename(columns=tm_stats).set_index('NameTeam').T)
 
     game_logs = []
 
-    n = 10000
 
     then = datetime.datetime.now()
 
-    for game in range(len(team_lineups)):
-        if (game % 500 == 0 and game != 0) or (game == 10):
+    for lineup in range(len(team_lineups)):
+        if (lineup % 5 == 0 and lineup != 0) or (lineup == 1):
             now = datetime.datetime.now()
             print(now - then)
-            time_per_game = (now - then) / game
-            print(f'ETA: {now + (n - game) * time_per_game}')
+            time_per_game = (now - then) / lineup
+            print(f'ETA: {now + (n - lineup) * time_per_game}')
 
         # Create an instance of the GameSimulator
-        game_simulator = GameSimulator(transition_probs, bat_stats, team_lineups[game], lg_dist, stat_col)
+        game_simulator = GameSimulator(transition_probs, bat_stats, team_lineups[lineup], lg_dist, stat_col)
 
         # Simulate a game
         for i in range(n):
@@ -145,9 +149,8 @@ def main():
         game_logs.append(runs / n)
 
     print(datetime.datetime.now() - then)
-    print(f'Average runs per game:')
     for n in range(len(lineups)):
-        print(f'{lineups[n]}: {game_logs[n]}')
+        print(f'{lineups[n]}: {round(game_logs[n],2)} Runs/Game')
 
 if __name__ == '__main__':
     main()
